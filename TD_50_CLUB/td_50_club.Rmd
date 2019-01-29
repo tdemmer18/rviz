@@ -1,0 +1,121 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(lubridate)
+library(gganimate)
+library(extrafont)
+```
+
+```{r}
+td_club <- read_csv("~/rstats/rviz/TD_50_CLUB/td_50_club.csv")
+```
+
+```{r}
+td_club$Date <- mdy(td_club$Date)
+td_club$Game <- as.integer(td_club$Game)
+td_club$TD <- as.integer(td_club$TD)
+```
+
+```{r}
+td_club
+```
+
+```{r}
+tds <- td_club %>% 
+  group_by(Player) %>% 
+  mutate(Total_TD = cumsum(TD)) %>% 
+  ungroup()
+tds
+```
+
+
+```{r}
+tds %>% 
+  ggplot(aes(Game, Total_TD, color = Player)) +
+  geom_line() +
+  labs(x = "Game #", y = "Total TD's",
+       title = "QB with over 50 TD in a season",
+       caption = "@tdemmer18 | 2019-01-27") +
+  theme(legend.position = "bottom",
+        rect = element_rect(fill = "#212F3C"),#0a1926
+        #panel.grid = element_blank(),
+        text = element_text(colour = "white"),
+        panel.background = element_rect(fill = "transparent", colour = "transparent"),
+        axis.text = element_text(colour = rgb(230, 230, 230, maxColorValue = 255), size = 11),
+        plot.title = element_text(hjust = 0.5)) 
+
+  transition_reveal(Game)
+  
+```
+
+# Boxplot that turned out to be a cool annimation.
+```{r}
+tds %>% 
+  ggplot(aes(Game, Total_TD, color = Player)) +
+  geom_boxplot() +
+  labs(x = "Game #", y = "Total TD's",
+       title = "QB with over 50 TD in a season",
+       caption = "@tdemmer18 | 2019-01-27") +
+  theme(legend.position = "bottom",
+        rect = element_rect(fill = "#212F3C"),#0a1926
+        #panel.grid = element_blank(),
+        text = element_text(colour = "white"),
+        panel.background = element_rect(fill = "transparent", colour = "transparent"),
+        axis.text = element_text(colour = rgb(230, 230, 230, maxColorValue = 255), size = 11),
+        plot.title = element_text(hjust = 0.5)) +
+  transition_reveal(Game)
+```
+
+```{r}
+player_color <- c("Peyton Manning" = "#FB4F14", "Tom Brady" = "#002244", "Patrick Mahomes" = "#E31837")
+```
+
+
+```{r}
+p <- tds %>% 
+  ggplot(aes(reorder(factor(Player), Total_TD), Total_TD, fill = Player)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = Total_TD), nudge_y = -3, color = "white", size = 8) +
+  scale_fill_manual(values = player_color) +
+  scale_y_continuous(breaks = seq(0, 55, 5)) +
+  labs(title = "NFL QBs with 50+ TD Passes in a Single Season", 
+       subtitle = "Game #: {closest_state}",
+       x = "", y = "",
+       #title = "QB with over 50 TD in a season",
+       caption = "@tdemmer18 | 2019-01-28") +
+  theme(legend.position = "none",
+        rect = element_rect(fill = "grey95"),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent", colour = "transparent"),
+        axis.text = element_text(size = 14),
+        axis.ticks = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(face = "bold", size = 14),
+        axis.line = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 18),
+        plot.subtitle = element_text(hjust = 0.5, size = 16),
+        plot.caption = element_text(size = 12),
+        strip.text = element_text(size = 16, face = "bold"),
+        strip.background = element_rect(colour = "black", fill = "white")) +
+  facet_wrap(~ Year, scales = "free_x") +
+  transition_states(Game) +
+  enter_grow()
+
+animate(p, nframes = 32, fps = 1.5, renderer = gifski_renderer(loop = FALSE))
+
+anim_save("top_50_club_annimation.gif", animation = last_animation(), path = "~/rstats/rviz/TD_50_CLUB/")
+
+```
+
+
+
+
+
+
+
+
